@@ -85,7 +85,7 @@ public class PayOSPaymentServlet extends HttpServlet {
             String returnUrl = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort()
                     + req.getContextPath() + "/payos-return?rentalOrderId=" + rentalOrderId + "&status=PAID";
 
-            JSONObject response = PayOSUtil.createPaymentRequest(totalPrice, description, returnUrl);
+            JSONObject response = PayOSUtil.createPaymentRequest(deposit, description, returnUrl);
             long orderCode = response.getLong("orderCode");
             String qrCode = response.getString("qrCode");
             String paymentLink = response.getString("paymentLink");

@@ -1,12 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
-    <title>Warehouse List</title>
+    <title>Warehouse History</title>
     <style>
         body {
             font-family: 'Segoe UI', sans-serif;
@@ -166,10 +167,17 @@
     <div class="left-column">
         <div class="card-container">
             <c:forEach var="order" items="${rentalHistory}">
-                <div class="warehouse-card" onclick="showProgress('${order.getRentalOrderID()}', '${order.getStatus()}')">
-                    <h3>🏢 ${order.getWarehouseID()}</h3>
-                    <p><strong>Address:</strong> ${order.getWarehouseID()}</p>
-                    <p><strong>Order Status:</strong> ${order.getStatus()}</p>
+                <c:set var="warehouse" value="${warehouseMap[order.warehouseID]}" />
+                <div class="warehouse-card"
+                     onclick="showProgress('${order.rentalOrderID}', '${order.status.toLowerCase()}',
+                             '${fn:escapeXml(warehouse.name)}', '${fn:escapeXml(warehouse.address)}, ${fn:escapeXml(warehouse.ward)}, ${fn:escapeXml(warehouse.district)}',
+                             '${warehouse.imageUrl}', '${order.startDate}', '${order.endDate}',
+                             '${order.deposit}', '${order.totalPrice}', '${order.depositPaid}', '${order.depositRefunded}')">
+                    <img src="image?id=${warehouse.imageUrl}" alt="Warehouse Image"
+                         style="width:100%; height:180px; object-fit:cover; border-radius:8px; margin-bottom:10px;">
+                    <h3>🏢 ${warehouse.name}</h3>
+                    <p><strong>Address:</strong> ${warehouse.address}, ${warehouse.ward}, ${warehouse.district}</p>
+                    <p><strong>Order Status:</strong> ${order.status}</p>
                 </div>
             </c:forEach>
         </div>
@@ -178,72 +186,11 @@
     <div class="right-column">
         <div class="progress-container" id="progress1">
             <div class="progress-fill"></div>
-            <div class="progress-step">
-                <div class="step-icon">⏳</div>
-                <div class="step-label">Pending Approval</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">✅</div>
-                <div class="step-label">Approved</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">💰</div>
-                <div class="step-label">Paid</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">📝</div>
-                <div class="step-label">Contract Signed</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">🎉</div>
-                <div class="step-label">Completed</div>
-            </div>
-        </div>
-        <div class="progress-container" id="progress2">
-            <div class="progress-fill"></div>
-            <div class="progress-step">
-                <div class="step-icon">⏳</div>
-                <div class="step-label">Pending Approval</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">✅</div>
-                <div class="step-label">Approved</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">💰</div>
-                <div class="step-label">Paid</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">📝</div>
-                <div class="step-label">Contract Signed</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">🎉</div>
-                <div class="step-label">Completed</div>
-            </div>
-        </div>
-        <div class="progress-container" id="progress3">
-            <div class="progress-fill"></div>
-            <div class="progress-step">
-                <div class="step-icon">⏳</div>
-                <div class="step-label">Pending Approval</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">✅</div>
-                <div class="step-label">Approved</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">💰</div>
-                <div class="step-label">Paid</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">📝</div>
-                <div class="step-label">Contract Signed</div>
-            </div>
-            <div class="progress-step">
-                <div class="step-icon">🎉</div>
-                <div class="step-label">Completed</div>
-            </div>
+            <div class="progress-step"><div class="step-icon">⏳</div><div class="step-label">Pending Approval</div></div>
+            <div class="progress-step"><div class="step-icon">✅</div><div class="step-label">Approved</div></div>
+            <div class="progress-step"><div class="step-icon">💰</div><div class="step-label">Paid</div></div>
+            <div class="progress-step"><div class="step-icon">📝</div><div class="step-label">Contract Signed</div></div>
+            <div class="progress-step"><div class="step-icon">🎉</div><div class="step-label">Completed</div></div>
         </div>
         <div class="detail-card" id="warehouse-detail" style="display: flex; justify-content: center; align-items: center; text-align: center; flex-direction: column;">
             Warehouse details will appear here when a warehouse is selected.
@@ -252,7 +199,9 @@
 </div>
 <jsp:include page="footer.jsp" />
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    function showProgress(id, currentStatus, name, address, imageUrl,
+                          startDate, endDate, deposit, totalPrice,
+                          depositPaid, depositRefunded) {
         const statusOrder = ['pending', 'approved', 'paid', 'contract', 'completed'];
         const statusLabels = {
             pending: '⏳ Pending Approval',
@@ -262,68 +211,40 @@
             completed: '🎉 Completed'
         };
 
-        const warehouses = [
-            {
-                id: 'progress1',
-                name: 'Hanoi Warehouse',
-                address: '12 Tran Duy Hung, Cau Giay',
-                status: 'paid'
-            },
-            {
-                id: 'progress2',
-                name: 'Ho Chi Minh City Warehouse',
-                address: '45 Le Loi, District 1',
-                status: 'approved'
-            },
-            {
-                id: 'progress3',
-                name: 'Da Nang Warehouse',
-                address: '123 Nguyen Van Linh',
-                status: 'completed'
+        document.querySelectorAll('.progress-container').forEach(p => p.style.display = 'none');
+        const container = document.getElementById('progress1');
+        container.style.display = 'flex';
+
+        const steps = container.querySelectorAll('.progress-step');
+        const fill = container.querySelector('.progress-fill');
+        const currentIndex = statusOrder.indexOf(currentStatus);
+
+        steps.forEach((step, index) => {
+            step.classList.remove('active');
+            if (index <= currentIndex) {
+                step.classList.add('active');
             }
-        ];
-
-        function showProgress(id, currentStatus) {
-            document.querySelectorAll('.progress-container').forEach(p => p.style.display = 'none');
-            const container = document.getElementById(id);
-            if (!container) return;
-            container.style.display = 'flex';
-
-            const steps = container.querySelectorAll('.progress-step');
-            const fill = container.querySelector('.progress-fill');
-            const currentIndex = statusOrder.indexOf(currentStatus);
-
-            steps.forEach((step, index) => {
-                step.classList.remove('active');
-                if (index <= currentIndex) {
-                    step.classList.add('active');
-                }
-            });
-
-            const percent = (currentIndex / (statusOrder.length - 1)) * 90 + 5;
-            fill.style.width = percent + '%';
-        }
-
-        const cards = document.querySelectorAll('.warehouse-card');
-        cards.forEach((card, index) => {
-            card.addEventListener('click', () => {
-                const warehouse = warehouses[index];
-                showProgress(warehouse.id, warehouse.status);
-
-                const detail = document.getElementById('warehouse-detail');
-                if (detail) {
-                    detail.innerHTML = `
-                            <div class="warehouse-card" style="width:100%; max-width:500px; margin-top:20px;">
-                                <h3>🏢 ${warehouse.name}</h3>
-                                <p><strong>Address:</strong> ${warehouse.address}</p>
-                                <p><strong>Order Status:</strong> ${statusLabels[warehouse.status]}</p>
-                            </div>
-                        `;
-                }
-            });
         });
-    });
+
+        const percent = (currentIndex / (statusOrder.length - 1)) * 90 + 5;
+        fill.style.width = percent + '%';
+        const detail = document.getElementById('warehouse-detail');
+        <%--detail.innerHTML = `--%>
+        <%--    <div class="warehouse-card" style="width:100%; max-width:500px; margin-top:20px;">--%>
+        <%--        <img src="image?id=${imageUrl}" alt="Warehouse Image"--%>
+        <%--             style="width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:10px;">--%>
+        <%--        <h3>🏢 ${name}</h3>--%>
+        <%--        <p><strong>Address:</strong> ${address}</p>--%>
+        <%--        <p><strong>Order Status:</strong> ${statusLabels[currentStatus]}</p>--%>
+        <%--        <hr>--%>
+        <%--        <p><strong>Rental Period:</strong> ${startDate} → ${endDate}</p>--%>
+        <%--        <p><strong>Deposit:</strong> ${deposit} VNĐ</p>--%>
+        <%--        <p><strong>Total Price:</strong> ${totalPrice} VNĐ</p>--%>
+        <%--        <p><strong>Deposit Paid:</strong> ${depositPaid == 'true' ? '✅ Yes' : '❌ No'}</p>--%>
+        <%--        <p><strong>Deposit Refunded:</strong> ${depositRefunded == 'true' ? '✅ Yes' : '❌ No'}</p>--%>
+        <%--    </div>--%>
+        <%--`;--%>
+    }
 </script>
 </body>
-
 </html>
